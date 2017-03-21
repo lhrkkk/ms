@@ -11,7 +11,7 @@ from vi.scheduler.push import push_compute
 # def push_decoding(code):
 
 from ms.conformer import Conformer
-from general.interpreter.context import update_context
+from vi.interpreter.context import update_context
 
 def push_generate(args):
     origin=Conformer()
@@ -20,7 +20,7 @@ def push_generate(args):
         args['xyz']=Conformer().decoding(i).to_xyz()
         push_compute('compute.gaussian',args)
 
-from vi.ensemble.ensemble import Ensemble
+from vi.ensemble_mongo.ensemble import Ensemble
 
 def ensemble_generate(args):
     # origin=Conformer()
@@ -52,8 +52,8 @@ def run(args):
 
 
 def selfrun(args={}):
-    from general.interpreter.loader import callrun
-    callrun(__file__,args)
+    from vi.interpreter.loaders import call_by_filename
+    call_by_filename(__file__, args)
 if __name__ == '__main__':
     # test()
     selfrun()

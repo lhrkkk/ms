@@ -28,8 +28,8 @@ def run(args):
 
 def selfrun():
     import vi.init_gs
-    from general.interpreter.loader import callrun
-    callrun(__file__)
+    from vi.interpreter.loaders import call_by_filename
+    call_by_filename(__file__)
 
 if __name__ == '__main__':
     # test()

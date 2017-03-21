@@ -131,9 +131,126 @@ def gaussian_conformer(conformer,method='pm3 opt',charge=0,mutiplicity=1):
 
     return new_conformer
 
-from vi.ensemble.ensemble import Ensemble
+from vi.ensemble_mongo.ensemble import Ensemble
 import os
 def gaussian(xyz,code=None,energy_cut=3000000000,database='gaussian',collection='default',method='pm3 ',charge=0,mutiplicity=1,args=None):
+# def gaussian(conf):
+
+    # xyz=conf['xyz']
+    # energy_cut=conf['energy_cut']
+    # database=conf['labkit']
+    # collection=conf['ensemble']
+    # method=conf['method']
+    # method=conf['method']
+    #
+    # charge=0
+    # mutiplicity=1
+
+
+    first_line_re=re.compile(r'^.*?\n.*?\n',re.S)
+    txt='#'+method+'\n\n'+'gaussian'+'\n'+first_line_re.sub('\n'+str(charge)+' '+str(mutiplicity)+'\n',xyz+'\n\n')
+    print txt
+
+    p=subprocess.Popen(['g09'],stdin=subprocess.PIPE,stdout=subprocess.PIPE)
+    output=p.communicate(input=txt)[0]
+
+    mp2_re=re.compile(r'\\MP2=(.*?)\\',re.S)
+    hf_re=re.compile(r'\\HF=(.*?)\\',re.S)
+    xyz_re=re.compile(r'Standard orientation:.*?\n -*\n.*? -*\n(.*?) -*\n',re.S)
+    # origin_text=out_file.read()
+    origin_text=output
+    text=origin_text.replace(' ','').replace('\n','')
+    mp2_find=mp2_re.findall(text)
+    hf_find=hf_re.findall(text)
+    xyz_find=xyz_re.findall(origin_text)
+    if xyz_find:
+        xyzcontent=xyz_find.pop()
+
+    pattern=re.compile(r'[ \t]+.+?[ \t]+(.+?)[ \t]+.+?[ \t]+(.+?)[ \t]+(.+?)[ \t]+?(.+?)\n')
+    xyz=pattern.findall(xyzcontent)
+
+    new=[]
+    for j,i in enumerate(xyz):
+        i=list(i)
+        if i[0]=='1':
+            i[0]='H'
+        elif i[0]=='6':
+            i[0]='C'
+        elif i[0]=='8':
+            i[0]='O'
+        elif i[0]=='7':
+            i[0]='N'
+        elif i[0]=='16':
+            i[0]='S'
+
+        new.append(' '.join(i))
+    atom_count=len(xyz)
+
+    xyz=str(atom_count)+'\n'+'Energy:\n'+'\n'.join(new)
+
+    if mp2_find:
+        hf=float(mp2_find[0])
+    else:
+        hf=float(hf_find[0])
+
+    xyz= re.sub(r'Energy:', 'Energy:  '+str(hf)+' ',xyz)
+
+    ensemble=Ensemble(db_name=database,collection_name=collection)
+
+
+
+    # coll=Conformer.get_coll(database,collection)
+    new=Conformer()
+    # new.set_coll(database,collection)
+    new.loads(xyz)
+    new.from_method=method
+    new.code=code
+    print (new.dumps())
+
+    # 内部可以用Conformer, 因此可以算完了直接入数据库. 另外回调函数可以再执行响应的连接和通知操作.
+    # print new.collection
+    # 重载save函数, 插入的时候就判重
+    # new.save()
+    # return True
+    # todo: 分离判重复? 以及同时操作数据库的问题, 是否需要设置tryout的次数
+    if ensemble.need_conformer(new,energy_cut=energy_cut):
+        print '=============='
+        ensemble.save(new)
+        ensemble_dir=os.path.join(args['work_dir'],args['current_ensemble'])
+        log.debug(ensemble_dir)
+        # todo: 也许不需要切路径
+        origin_dir=os.path.abspath(os.curdir)
+        # os.chdir(args['work_dir'])
+        try:
+            os.mkdir(ensemble_dir)
+        except:
+            pass
+
+
+        try:
+            os.chdir(ensemble_dir)
+            print "------------",ensemble_dir
+            if code:
+                new.dump(str(code)+'.xyz')
+        finally:
+            os.chdir(origin_dir)
+
+
+        # new.save()
+    #
+    # tryout=0
+    # while tryout<5:
+    #     try:
+    #         new.save()
+    #         break
+    #     except:
+    #         # time.sleep(1)
+    #         tryout=tryout+1
+
+
+    return True
+
+def gaussian_file(xyz,code=None,energy_cut=3000000000,database='gaussian',collection='default',method='pm3 ',charge=0,mutiplicity=1,args=None):
 # def gaussian(conf):
 
     # xyz=conf['xyz']
@@ -307,8 +424,8 @@ def test():
 
 
 def selfrun():
-    from general.interpreter.loader import callrun
-    callrun(__file__)
+    from vi.interpreter.loaders import call_by_filename
+    call_by_filename(__file__)
 if __name__ == '__main__':
     # test()
     selfrun()

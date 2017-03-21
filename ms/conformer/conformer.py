@@ -141,7 +141,6 @@ all_aa_file_name=os.path.join(script_folder,'all_aa.pdb')
 
 
 
-
 @as_method_of(Vector)
 def axis_rotate_with_origin(v,axis,angle):
     '''
@@ -172,7 +171,7 @@ def __sub__(self,other):
 
 import vi.init_gs
 
-from general.interpreter.loader import load_self_conf
+from vi.interpreter.loaders import load_args_by_self_file
 # print __file__
 # print load_self_conf(__file__)
 
@@ -215,9 +214,8 @@ class Conformer(Polypeptide):
         self.from_method='origin'
 
 
-
         if conf == None:
-            conf=load_self_conf(__file__)
+            conf=load_args_by_self_file(__file__)
         if conf:
             self.conf=self.parse_conf(conf)
             if empty:
@@ -259,7 +257,7 @@ class Conformer(Polypeptide):
 
         # todo: 用__dict__的方法把conf弄成一个对象, 从而可以使用conf.xxx的方式访问. 字母改小写(似乎不太好?).
         if origin_conf == None:
-            origin_conf=load_self_conf(__file__)
+            origin_conf=load_args_by_self_file(__file__)
 
         CONFIG=origin_conf
         conf={}
@@ -1601,8 +1599,8 @@ def run(args):
 
 def selfrun():
     import vi.init_gs
-    from general.interpreter.loader import callrun
-    callrun(__file__)
+    from vi.interpreter.loaders import call_by_filename
+    call_by_filename(__file__)
 if __name__ == '__main__':
     test()
     # selfrun()

@@ -15,8 +15,8 @@ def run(args):
 
 def selfrun(args={}):
     import vi.init_gs
-    from general.interpreter.loader import callrun
-    callrun(__file__,args)
+    from vi.interpreter.loaders import call_by_filename
+    call_by_filename(__file__, args)
 if __name__ == '__main__':
     # test()
     selfrun()
